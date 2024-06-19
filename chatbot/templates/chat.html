@@ -1,0 +1,97 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chatbot</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        #chatbox {
+            width: 50%;
+            margin: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-top: 50px;
+            background-color: #f9f9f9;
+        }
+        #messages {
+            height: 300px;
+            overflow-y: scroll;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: white;
+        }
+        .message {
+            margin: 5px 0;
+            padding: 5px;
+        }
+        .user-message {
+            text-align: right;
+            color: blue;
+        }
+        .bot-message {
+            text-align: left;
+            color: green;
+        }
+        #user_input {
+            width: calc(100% - 110px);
+            padding: 5px;
+        }
+        #send {
+            width: 100px;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center;">Chat with our bot</h1>
+    <div id="chatbox">
+        <div id="messages"></div>
+        <input type="text" id="user_input" placeholder="Type a message..." autocomplete="off">
+        <button id="send">Send</button>
+    </div>
+
+    <script>
+        $(document).ready(function(){
+            $("#send").click(function(){
+                sendMessage();
+            });
+
+            $("#user_input").keypress(function(e){
+                if(e.which == 13) {  // Enter key pressed
+                    sendMessage();
+                }
+            });
+
+            function sendMessage() {
+                var user_input = $("#user_input").val();
+                if(user_input.trim() === "") return;
+
+                $("#messages").append("<div class='message user-message'>User: " + user_input + "</div>");
+                
+                $.ajax({
+                    type: "POST",
+                    url: "{% url 'chatbot:chatbot_view' %}",
+                    data: {
+                        'user_input': user_input,
+                        'csrfmiddlewaretoken': '{{ csrf_token }}'
+                    },
+                    success: function(response){
+                        $("#messages").append("<div class='message bot-message'>Bot: " + response.response + "</div>");
+                        $("#user_input").val("");  // Clear the input field
+                        $("#messages").scrollTop($("#messages")[0].scrollHeight);  // Scroll to the bottom
+                    },
+                    error: function() {
+                        $("#messages").append("<div class='message bot-message'>Bot: Sorry, I couldn't reach the server. Please try again later.</div>");
+                        $("#user_input").val("");  // Clear the input field
+                        $("#messages").scrollTop($("#messages")[0].scrollHeight);  // Scroll to the bottom
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
